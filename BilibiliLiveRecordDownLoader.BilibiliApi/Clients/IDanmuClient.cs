@@ -14,6 +14,10 @@ public interface IDanmuClient : IDisposableObservable
 	/// 连接失败重试间隔
 	/// </summary>
 	TimeSpan RetryInterval { get; set; }
+	/// <summary>
+	/// 弹幕文件路径
+	/// </summary>
+	string? DanmakuFilePath { get; set; }
 	IObservable<DanmuPacket> Received { get; }
 	ValueTask StartAsync();
 }

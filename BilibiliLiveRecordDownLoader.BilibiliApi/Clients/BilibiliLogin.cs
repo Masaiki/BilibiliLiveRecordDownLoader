@@ -33,6 +33,23 @@ public partial class BilibiliApiClient
 		return 0;
 	}
 
+	public string GetBuvid3()
+	{
+		string[] cookiePairs = Cookie.Split(new[] { "; " }, StringSplitOptions.RemoveEmptyEntries);
+		foreach (string pair in cookiePairs)
+		{
+			string[] keyValue = pair.Split('=');
+			if (keyValue.Length == 2)
+			{
+				if (keyValue[0] == "buvid3")
+				{
+					return keyValue[1];
+				}
+			}
+		}
+		return string.Empty;
+	}
+
 	#endregion
 
 	#region 二维码地址及扫码密钥

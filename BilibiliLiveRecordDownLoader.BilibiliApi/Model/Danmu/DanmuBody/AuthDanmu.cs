@@ -10,6 +10,9 @@ public record AuthDanmu
 	[JsonPropertyName(@"uid")]
 	public long UserId { get; set; }
 
+	[JsonPropertyName(@"buvid")]
+	public string? Buvid3 { get; set; }
+
 	[JsonPropertyName(@"protover")]
 	public short ProtocolVersion { get; set; }
 

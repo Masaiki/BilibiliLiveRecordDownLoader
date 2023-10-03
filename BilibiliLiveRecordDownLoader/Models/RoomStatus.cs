@@ -110,6 +110,8 @@ public class RoomStatus : ReactiveObject
 	[Reactive]
 	public RecordStatus RecordStatus { get; set; }
 
+	public DateTime RecordStartTime { get; set; }
+
 	/// <summary>
 	/// 是否开播提醒
 	/// </summary>
@@ -387,6 +389,7 @@ public class RoomStatus : ReactiveObject
 					}
 
 					RecordStatus = RecordStatus.录制中;
+					RecordStartTime = DateTime.Now;
 
 					if (format.Equals(@"flv", StringComparison.OrdinalIgnoreCase))
 					{
@@ -408,7 +411,11 @@ public class RoomStatus : ReactiveObject
 						format = @".ts";
 					}
 
-					string filePath = Path.Combine(_config.MainDir, RoomId.ToString(CultureInfo.InvariantCulture), DateTime.Now.ToString(@"yyyyMMdd_HHmmss") + format);
+					string pathPrefix = Path.Combine(_config.MainDir, RoomId.ToString(CultureInfo.InvariantCulture), RecordStartTime.ToString(@"yyyyMMdd_HHmmss"));
+
+					string filePath = pathPrefix + format;
+					_danmuClient.DanmakuFilePath = pathPrefix + @".jsonl";
+
 
 					_logger.LogInformation(@"开始录制：{filePath}", filePath);
 
@@ -475,6 +482,7 @@ public class RoomStatus : ReactiveObject
 		{
 			RecordStatus = RecordStatus.未录制;
 			Speed = string.Empty;
+			_danmuClient.DanmakuFilePath = null;
 		}
 	}
 

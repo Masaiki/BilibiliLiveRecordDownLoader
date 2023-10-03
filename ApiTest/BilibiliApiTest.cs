@@ -12,7 +12,7 @@ namespace ApiTest;
 [TestClass]
 public class BilibiliApiTest
 {
-	private readonly BilibiliApiClient _apiClient = new(HttpClientUtils.BuildClientForBilibili(string.Empty, Cookie, new SocketsHttpHandler()));
+	private readonly BilibiliApiClient _apiClient = new(HttpClientUtils.BuildClientForBilibili(string.Empty, Cookie, new SocketsHttpHandler()), Cookie);
 
 	[TestMethod]
 	public async Task GetDanmuConfTestAsync()

@@ -13,10 +13,12 @@ namespace BilibiliApi.Clients;
 public partial class BilibiliApiClient : IHttpClient
 {
 	public HttpClient Client { get; set; }
+	public string Cookie { get; set; }
 
-	public BilibiliApiClient(HttpClient client)
+	public BilibiliApiClient(HttpClient client, string cookie)
 	{
 		Client = client;
+		Cookie = cookie;
 	}
 
 	private async Task<T?> GetJsonAsync<T>(string url, CancellationToken token)

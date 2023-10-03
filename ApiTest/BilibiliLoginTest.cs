@@ -9,7 +9,7 @@ namespace ApiTest;
 [TestClass]
 public class BilibiliLoginTest
 {
-	private readonly BilibiliApiClient _apiClient = new(HttpClientUtils.BuildClientForBilibili(UserAgents.BilibiliManga, Cookie, new SocketsHttpHandler()));
+	private readonly BilibiliApiClient _apiClient = new(HttpClientUtils.BuildClientForBilibili(UserAgents.BilibiliManga, Cookie, new SocketsHttpHandler()), Cookie);
 
 	[TestMethod]
 	public async Task GetHashTestAsync()

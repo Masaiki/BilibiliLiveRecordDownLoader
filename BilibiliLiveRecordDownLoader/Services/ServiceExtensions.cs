@@ -105,7 +105,7 @@ public static class ServiceExtensions
 		{
 			Config config = provider.GetRequiredService<Config>();
 			HttpClient client = HttpClientUtils.BuildClientForBilibili(config.UserAgent, config.Cookie, config.HttpHandler);
-			return new BilibiliApiClient(client);
+			return new BilibiliApiClient(client, config.Cookie);
 		});
 
 		return services;

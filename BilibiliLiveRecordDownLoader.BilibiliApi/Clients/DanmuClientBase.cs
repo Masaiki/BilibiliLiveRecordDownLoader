@@ -8,6 +8,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Pipelines.Extensions;
 using System.Buffers;
+using System.IO;
 using System.IO.Compression;
 using System.IO.Pipelines;
 using System.Reactive;
@@ -29,6 +30,7 @@ public abstract class DanmuClientBase : IDanmuClient
 	public long RoomId { get; set; }
 
 	public TimeSpan RetryInterval { get; set; } = TimeSpan.FromSeconds(2);
+	public string? DanmakuFilePath { get; set; }
 	private static readonly TimeSpan HeartBeatInterval = TimeSpan.FromSeconds(30);
 
 	private string DanmuServerCacheKey => @"🤣DanmuClient.Servers." + RoomId;
@@ -49,12 +51,15 @@ public abstract class DanmuClientBase : IDanmuClient
 	protected ushort Port;
 	private string? _token;
 	private long _uid;
+	private string buvid3;
 
 	private const string DefaultHost = @"broadcastlv.chat.bilibili.com";
 	protected abstract ushort DefaultPort { get; }
 
 	private CancellationTokenSource? _cts;
 	private readonly CompositeDisposable _disposableServices = new();
+
+	private StreamWriter? danmakuWriter;
 
 	protected DanmuClientBase(ILogger<DanmuClientBase> logger, BilibiliApiClient apiClient, IDistributedCache cacheService)
 	{
@@ -91,6 +96,7 @@ public abstract class DanmuClientBase : IDanmuClient
 
 				await GetServerAsync(cancellationToken);
 				await GetUidAsync();
+				GetBuvid3();
 
 
 				_logger.LogInformation(@"正在连接弹幕服务器 {server}", Server);
@@ -169,6 +175,18 @@ public abstract class DanmuClientBase : IDanmuClient
 			catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
 			{
 				_logger.LogWarning(ex, @"获取 uid 失败");
+			}
+		}
+
+		void GetBuvid3()
+		{
+			try
+			{
+				buvid3 = ApiClient.GetBuvid3();
+			}
+			catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+			{
+				_logger.LogWarning(ex, @"获取 buvid3 失败");
 			}
 		}
 
@@ -282,6 +300,7 @@ public abstract class DanmuClientBase : IDanmuClient
 			{
 				RoomId = RoomId,
 				UserId = _uid,
+				Buvid3 = buvid3,
 				ProtocolVersion = ReceiveProtocolVersion,
 				Token = _token
 			};
@@ -328,10 +347,28 @@ public abstract class DanmuClientBase : IDanmuClient
 
 	private async ValueTask ReadPipeAsync(PipeReader reader, CancellationToken cancellationToken)
 	{
+		bool danmakuWriteCreateHere = false;
 		try
 		{
 			while (true)
 			{
+				if (DanmakuFilePath != null)
+				{
+					if (danmakuWriter == null)
+					{
+						danmakuWriter = new(DanmakuFilePath, false);
+						danmakuWriteCreateHere = true;
+					}
+				}
+				else
+				{
+					if (danmakuWriter != null)
+					{
+						danmakuWriter.Close();
+						danmakuWriter = null;
+					}
+				}
+
 				cancellationToken.ThrowIfCancellationRequested();
 
 				ReadResult result = await reader.ReadAsync(cancellationToken);
@@ -364,6 +401,11 @@ public abstract class DanmuClientBase : IDanmuClient
 		}
 		finally
 		{
+			if (danmakuWriteCreateHere)
+			{
+				danmakuWriter?.Close();
+				danmakuWriter = null;
+			}
 			await reader.CompleteAsync();
 		}
 	}
@@ -375,7 +417,7 @@ public abstract class DanmuClientBase : IDanmuClient
 			case 0:
 			case 1:
 			{
-				EmitDanmu();
+				await EmitDanmu();
 				break;
 			}
 			case 2:
@@ -402,8 +444,15 @@ public abstract class DanmuClientBase : IDanmuClient
 			}
 		}
 
-		void EmitDanmu()
+		async Task EmitDanmu()
 		{
+			if (danmakuWriter != null)
+			{ 
+				if (packet.Operation == Operation.SendMsgReply)
+				{
+					await danmakuWriter.WriteLineAsync(Encoding.UTF8.GetString(packet.Body));
+				}
+			}
 #if DEBUG
 			switch (packet.Operation)
 			{
